@@ -170,25 +170,27 @@ struct Song: Codable, Identifiable {
 ```
 
 **何をしているか：**
-（この部分が果たしている役割を説明する）
+apiから受け取ったjsonをSwiftの変数に入れて型を指定
 
 **なぜこう書くのか：**
-（別の書き方ではなく、この書き方が選ばれている理由を説明する）
+Codableを入れることでSwiftの機能で自動でJsonをSwiftに変換してくれる
 
 **もしこう書かなかったら：**
-（この部分を省略したり変えたりすると何が起きるか。実際に試した結果があればここに書く）
+
 
 ---
 
 ### API通信の処理
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+let (data, _) = try await URLSession.shared.data(from: url)
 ```
 
 **何をしているか：**
+urlに対してHTTPリクエストを送ってレスポンスを受け取っている
 
 **なぜこう書くのか：**
+通信処理のせいでUIが固まるのを防ぐためawaitをつけて非同期処理にしている
 
 **もしこう書かなかったら：**
 
@@ -197,12 +199,53 @@ struct Song: Codable, Identifiable {
 ### ビューの構成
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+var body: some View {
+        NavigationStack {
+            VStack {
+                // 検索バー
+                HStack {
+                    TextField("アーティスト名を入力", text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button("検索") {
+                        Task {
+                            await searchMusic()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(searchText.isEmpty)
+                }
+                .padding(.horizontal)
+
+                // 検索結果リスト
+                if isLoading {
+                    ProgressView("検索中...")
+                        .padding()
+                    Spacer()
+                } else if songs.isEmpty {
+                    ContentUnavailableView(
+                        "曲を検索してみよう",
+                        systemImage: "music.note",
+                        description: Text("アーティスト名を入力して検索ボタンを押してください")
+                    )
+                } else {
+                    List(songs) { song in
+                        SongRow(song: song)
+                    }
+                }
+            }
+            .navigationTitle("Music Search")
+        }
+    }
+
 ```
 
 **何をしているか：**
+TextFieldに入力した文字をserchTextにバインド
+なにか曲を検索し終えたら楽曲リストのViewを表示する
 
 **なぜこう書くのか：**
+isLoadingなどで状態によって表示するViewを変える方が安全で簡潔だから
 
 **もしこう書かなかったら：**
 
