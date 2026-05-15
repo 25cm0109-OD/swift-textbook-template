@@ -225,13 +225,54 @@ struct LandmarkCard: View {
 **このアプリは何をするものか：**
 
 （アプリの動作を自分の言葉で説明する。スクリーンショットを貼ってもよい。）
+マップに6つのランドマークを表すピンを打って
 
 ## コードの詳細解説
+
+Landmark型にセットした地図の座標と名前のピンをマップ内に打ち、画面下部のCategoryFilterのViewでランドマークの属性をフィルターする
+フィルターに適合しないピンは除外されて表示される
 
 ### データモデル（ランドマーク構造体）
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+struct Landmark: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let description: String
+    let coordinate: CLLocationCoordinate2D
+    let category: Category
+
+    static func == (lhs: Landmark, rhs: Landmark) -> Bool {
+        lhs.id == rhs.id
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    enum Category: String, CaseIterable {
+        case temple = "寺社"
+        case tower = "タワー"
+        case park = "公園"
+
+        var iconName: String {
+            switch self {
+            case .temple: return "building.columns"
+            case .tower: return "antenna.radiowaves.left.and.right"
+            case .park: return "leaf"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .temple: return .red
+            case .tower: return .blue
+            case .park: return .green
+            }
+        }
+    }
+}
+
 ```
 
 **何をしているか：**
@@ -248,7 +289,53 @@ struct LandmarkCard: View {
 ### 地図の表示とカメラ制御
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+struct ContentView: View {
+    //カメラポジション
+    @State private var cameraPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
+            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
+        )
+    )
+    @State private var selectedLandmark: Landmark?
+    @State private var selectedCategories: Set<Landmark.Category> = Set(Landmark.Category.allCases)
+
+    var filteredLandmarks: [Landmark] {
+        Landmark.sampleData.filter { selectedCategories.contains($0.category) }
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            // 地図
+            Map(position: $cameraPosition, selection: $selectedLandmark) {
+                ForEach(filteredLandmarks) { landmark in
+                    Marker(
+                        landmark.name,
+                        systemImage: landmark.category.iconName,
+                        coordinate: landmark.coordinate
+                    )
+                    .tint(landmark.category.color)
+                    .tag(landmark)
+                }
+            }
+            .mapStyle(.standard(elevation: .realistic))
+
+            // カテゴリフィルター
+            VStack(spacing: 8) {
+                if let landmark = selectedLandmark {
+                    LandmarkCard(landmark: landmark)
+                        .transition(.move(edge: .bottom))
+                }
+
+                CategoryFilter(selectedCategories: $selectedCategories)
+            }
+            .padding()
+        }
+        .onMapCameraChange { context in
+            // 地図の操作に応じた処理を追加できる
+        }
+    }
+}
 ```
 
 **何をしているか：**
