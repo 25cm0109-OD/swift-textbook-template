@@ -277,7 +277,7 @@ struct Landmark: Identifiable, Hashable {
 
 **何をしているか：**
 （この部分が果たしている役割を説明する）
-ランドマーク(地名)収納する構造体 
+ランドマーク(地名)収納する構造体
 id UUID ←入ったものに自動でIDをつける
 地名, スポット名, 説明, 緯度経度, カテゴリー のプロパティを持っている
 func ==() ←==演算子は実は関数で 左辺と右辺のidを比較するように定義している
@@ -288,9 +288,31 @@ func ==() ←==演算子は実は関数で 左辺と右辺のidを比較する�
 
 **なぜこう書くのか：**
 （別の書き方ではなく、この書き方が選ばれている理由を説明する）
+Identifiable （一意に識別できる）
+SwiftUIの List や ForEach でデータを並べて表示するとき、SwiftUIは「どれがどのデータか」を識別する必要がある
+Hashable （ハッシュ値に変換できる）
+データを Set（重複のない集合）に入れたり、画面遷移（NavigationStack の navigationDestination）の移動先データとして渡したりするために必要
+enum の中に iconName や color を持たせる理由
+データ自身に、自分の見た目の情報（デザイン）を持たせるカプセル化
 
 **もしこう書かなかったら：**
 （この部分を省略したり変えたりすると何が起きるか。実際に試した結果があればここに書く）
+import Foundation
+import CoreLocation
+
+// IdentifiableもHashableも使わない
+```swift
+struct Landmark {
+    let name: String
+    let description: String
+    let latitude: Double
+    let longitude: Double
+    let category: String
+}
+```
+View側が長くなる
+打ち間違いに対してコンパイラーがエラーを出してくれない
+（List）でエラーになる
 
 ---
 
@@ -363,6 +385,15 @@ apple標準の3d風マップを表示
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+ForEach(filteredLandmarks) { landmark in
+    Marker(
+        landmark.name,
+        systemImage: landmark.category.iconName,
+        coordinate: landmark.coordinate
+    )
+    .tint(landmark.category.color)
+    .tag(landmark)
+}
 ```
 
 **何をしているか：**
