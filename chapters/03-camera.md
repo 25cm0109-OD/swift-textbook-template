@@ -178,6 +178,11 @@ struct CameraView: UIViewControllerRepresentable {
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+// フォトライブラリから選択
+PhotosPicker(selection: $selectedItem, matching: .images) {
+    Label("ライブラリ", systemImage: "photo.on.rectangle")
+}
+.buttonStyle(.bordered)
 ```
 
 **何をしているか：**
@@ -195,6 +200,19 @@ struct CameraView: UIViewControllerRepresentable {
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+func loadImage(from item: PhotosPickerItem?) async { // ← ① async がついている
+    guard let item = item else { return }
+
+    do {
+        // ← ② try await を使って、重い読み込み処理を非同期で実行している
+        if let data = try await item.loadTransferable(type: Data.self),
+           let uiImage = UIImage(data: data) {
+            selectedImage = Image(uiImage: uiImage)
+        }
+    } catch {
+        print("画像の読み込みに失敗: \(error.localizedDescription)")
+    }
+}
 ```
 
 **何をしているか：**
@@ -209,6 +227,19 @@ struct CameraView: UIViewControllerRepresentable {
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+func loadImage(from item: PhotosPickerItem?) async { // ← ① async がついている
+    guard let item = item else { return }
+
+    do {
+        // ← ② try await を使って、重い読み込み処理を非同期で実行している
+        if let data = try await item.loadTransferable(type: Data.self),
+           let uiImage = UIImage(data: data) {
+            selectedImage = Image(uiImage: uiImage)
+        }
+    } catch {
+        print("画像の読み込みに失敗: \(error.localizedDescription)")
+    }
+}
 ```
 
 **何をしているか：**
@@ -223,6 +254,29 @@ struct CameraView: UIViewControllerRepresentable {
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    let parent: CameraView
+
+    init(_ parent: CameraView) {
+        self.parent = parent
+    }
+
+    // ① 写真が撮影し終わったときにUIKitから呼ばれるデリゲートメソッド
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+    ) {
+        if let image = info[.originalImage] as? UIImage {
+            parent.capturedImage = image // SwiftUI側の変数に画像を渡す
+        }
+        parent.dismiss() // カメラを閉じる
+    }
+
+    // ② キャンセルされたときに呼ばれるメソッド
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        parent.dismiss()
+    }
+}
 ```
 
 **何をしているか：**
