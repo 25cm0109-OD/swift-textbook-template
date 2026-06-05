@@ -397,10 +397,22 @@ ForEach(filteredLandmarks) { landmark in
 ```
 
 **何をしているか：**
+地図上にマーカーを置く
+マーカーの色変更
+マーカーにタグ付け
+
 
 **なぜこう書くのか：**
+ForEach()
+描画する要素の中身を監視してくれる
+ピンを増やしたり減らしたりする時にView側でわざわざその処理をしなくていい
+.tag(landmark)
+押された状態をlandmarkと連動
 
 **もしこう書かなかったら：**
+配列から古いピンを地図から取り除く処理を書く
+UIKitの(MKPointAnnotation)を生成
+色やアイコンを変える専用の関数を用意する
 
 ---
 
@@ -408,6 +420,11 @@ ForEach(filteredLandmarks) { landmark in
 
 ```swift
 // 該当部分のコードを抜粋して貼る
+@State private var selectedCategories: Set<Landmark.Category> = Set(Landmark.Category.allCases)
+
+var filteredLandmarks: [Landmark] {
+    Landmark.sampleData.filter { selectedCategories.contains($0.category) }
+}
 ```
 
 **何をしているか：**
@@ -448,6 +465,7 @@ ForEach(filteredLandmarks) { landmark in
 
 1. **質問：**
    **得られた理解：**
+
 
 2. **質問：**
    **得られた理解：**
