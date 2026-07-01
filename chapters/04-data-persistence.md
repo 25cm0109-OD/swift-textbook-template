@@ -687,3 +687,252 @@ modelContext.insert(memo)
 @AppStorage("キー名")
 
 アプリ設定を保存する。
+
+
+
+# 完成コード
+```swift
+//
+//  MyView.swift
+//  Infinit_Data
+//
+//  Created by cmStudent on 2026/06/19.
+//
+import SwiftUI
+import SwiftData
+
+@Model
+class Memo {
+    var title: String
+    var content: String
+    var createdAt: Date
+    var isFavorite: Bool
+
+    init(
+        title: String,
+        content: String,
+        createdAt: Date = .now,
+        isFavorite: Bool = false
+    ) {
+        self.title = title
+        self.content = content
+        self.createdAt = createdAt
+        self.isFavorite = isFavorite
+    }
+}
+
+struct MyView: View {
+    @Query(sort: \Memo.createdAt, order: .reverse)
+    private var memos: [Memo]
+
+    @State private var isShowingAddSheet = false
+    @State private var isShowingSettings = false
+
+    @Environment(\.modelContext) private var modelContext
+    @AppStorage("userName") private var userName: String = ""
+    @AppStorage("sortByFavorite") private var sortByFavorite: Bool = false
+
+    var displayedMemos: [Memo] {
+        if sortByFavorite {
+            return memos.sorted {
+                $0.isFavorite && !$1.isFavorite
+            }
+        }
+        return memos
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if memos.isEmpty {
+                    ContentUnavailableView(
+                        "メモがありません",
+                        systemImage: "note.text",
+                        description: Text("右上の＋ボタンからメモを追加してください")
+                    )
+                } else {
+                    List {
+                        ForEach(displayedMemos) { memo in
+                            NavigationLink(destination: MemoEditView(memo: memo)) {
+                                MemoRow(memo: memo)
+                            }
+                        }
+                        .onDelete(perform: deleteMemos)
+                    }
+                }
+            }
+            .navigationTitle(
+                userName.isEmpty
+                ? "メモ帳"
+                : "\(userName)のメモ帳"
+            )
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            isShowingSettings = true
+                        } label: {
+                            Image(systemName: "gear")
+                        }
+                    }
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView(
+                    userName: $userName,
+                    sortByFavorite: $sortByFavorite
+                )
+            }
+        }
+        .sheet(isPresented: $isShowingAddSheet) {
+            MemoAddView()
+        }
+    }
+    func deleteMemos(at offsets: IndexSet) {
+        for index in offsets {
+            let memo = displayedMemos[index]
+            modelContext.delete(memo)
+        }
+    }
+}
+
+struct MemoAddView: View {
+    @State private var title = ""
+    @State private var content = ""
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("タイトル") {
+                    TextField("メモのタイトル", text: $title)
+                }
+
+                Section("内容") {
+                    TextEditor(text: $content)
+                        .frame(minHeight: 200)
+                }
+            }
+            .navigationTitle("新しいメモ")
+        }
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("キャンセル") {
+                    dismiss()
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("保存") {
+                    let memo = Memo(
+                        title: title,
+                        content: content
+                    )
+
+                    modelContext.insert(memo)
+                    dismiss()
+                }
+                .disabled(title.isEmpty)
+            }
+        }
+    }
+}
+
+
+struct MemoRow: View {
+    let memo: Memo
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(memo.title)
+                    .font(.headline)
+
+                Text(memo.content)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+
+                Text(memo.createdAt, style: .date)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+
+            if memo.isFavorite {
+                Image(systemName: "star.fill")
+                    .foregroundStyle(.yellow)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct MemoEditView: View {
+    @Bindable var memo: Memo
+
+    var body: some View {
+        Form {
+            Section("タイトル") {
+                TextField("タイトル", text: $memo.title)
+            }
+
+            Section("内容") {
+                TextEditor(text: $memo.content)
+                    .frame(minHeight: 200)
+            }
+
+            Section {
+                Toggle("お気に入り", isOn: $memo.isFavorite)
+            }
+        }
+        .navigationTitle("メモを編集")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct SettingsView: View {
+    @Binding var userName: String
+    @Binding var sortByFavorite: Bool
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("ユーザー設定") {
+                    TextField("ユーザー名", text: $userName)
+
+                }
+                Section("表示設定") {
+                    Toggle("お気に入りを優先して表示", isOn: $sortByFavorite)
+                }
+                Section {
+                    Text("設定はアプリを閉じても保存されます")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("設定")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完了") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+#Preview{
+    MyView()
+}
+```
