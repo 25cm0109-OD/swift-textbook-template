@@ -14,7 +14,6 @@
 （教員から配布された模範コードをここに貼り付ける）
 
 ```swift
-// ここに模範コード全体を貼る
 // ============================================
 // 第3章（基本）：写真を選択・撮影して表示するアプリ
 // ============================================
@@ -177,7 +176,6 @@ struct CameraView: UIViewControllerRepresentable {
 ### PhotosPickerによる写真選択
 
 ```swift
-// 該当部分のコードを抜粋して貼る
 // フォトライブラリから選択
 PhotosPicker(selection: $selectedItem, matching: .images) {
     Label("ライブラリ", systemImage: "photo.on.rectangle")
@@ -200,18 +198,21 @@ PhotosPicker(selection: $selectedItem, matching: .images) {
 ### 画像の非同期読み込み
 
 ```swift
-// 該当部分のコードを抜粋して貼る
-func loadImage(from item: PhotosPickerItem?) async { // ← ① async がついている
-    guard let item = item else { return }
+struct CameraView: UIViewControllerRepresentable {
+    @Binding var capturedImage: UIImage?
+    @Environment(\.dismiss) private var dismiss
 
-    do {
-        // ← ② try await を使って、重い読み込み処理を非同期で実行している
-        if let data = try await item.loadTransferable(type: Data.self),
-           let uiImage = UIImage(data: data) {
-            selectedImage = Image(uiImage: uiImage)
-        }
-    } catch {
-        print("画像の読み込みに失敗: \(error.localizedDescription)")
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
     }
 }
 ```
@@ -237,7 +238,6 @@ PhotosPickerも完全にUIKitにする
 ### UIViewControllerRepresentableによるカメラ連携
 
 ```swift
-// 該当部分のコードを抜粋して貼る
 func loadImage(from item: PhotosPickerItem?) async { // ← ① async がついている
     guard let item = item else { return }
 
@@ -265,7 +265,6 @@ func loadImage(from item: PhotosPickerItem?) async { // ← ① async がつい�
 ### Coordinatorパターン
 
 ```swift
-// 該当部分のコードを抜粋して貼る
 class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     let parent: CameraView
 

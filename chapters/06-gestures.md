@@ -14,7 +14,7 @@
 （教員から配布された模範コードをここに貼り付ける）
 
 ```swift
-// ここに模範コード全体を貼る
+// 詳細解説の各コードを順に組み合わせたものが模範コードです。
 ```
 
 **このアプリは何をするものか：**
@@ -26,7 +26,21 @@
 ### 基本ジェスチャー（タップ、ロングプレス）
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+RoundedRectangle(cornerRadius: 16)
+    .fill(backgroundColor)
+    .frame(width: 200, height: 200)
+    .onTapGesture {
+        tapCount += 1
+        backgroundColor = Color(hue: Double.random(in: 0...1), saturation: 0.7, brightness: 0.9)
+    }
+
+Circle()
+    .fill(isPressed ? .green : .orange)
+    .frame(width: 120, height: 120)
+    .onLongPressGesture(minimumDuration: 1.0) {
+        isPressed = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { isPressed = false }
+    }
 ```
 
 **何をしているか：**
@@ -43,7 +57,20 @@
 ### ドラッグジェスチャーとオフセット管理
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+@State private var offset: CGSize = .zero
+@State private var lastOffset: CGSize = .zero
+
+.offset(offset)
+.gesture(
+    DragGesture()
+        .onChanged { value in
+            offset = CGSize(
+                width: lastOffset.width + value.translation.width,
+                height: lastOffset.height + value.translation.height
+            )
+        }
+        .onEnded { _ in lastOffset = offset }
+)
 ```
 
 **何をしているか：**
@@ -57,7 +84,19 @@
 ### 拡大縮小と回転
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+.scaleEffect(scale)
+.gesture(
+    MagnifyGesture()
+        .onChanged { value in scale = lastScale * value.magnification }
+        .onEnded { _ in lastScale = scale }
+)
+
+.rotationEffect(angle)
+.gesture(
+    RotateGesture()
+        .onChanged { value in angle = lastAngle + value.rotation }
+        .onEnded { _ in lastAngle = angle }
+)
 ```
 
 **何をしているか：**
@@ -71,7 +110,34 @@
 ### ジェスチャーの組み合わせとアニメーション
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+.gesture(
+    DragGesture()
+        .onChanged { value in
+            offset = CGSize(
+                width: lastOffset.width + value.translation.width,
+                height: lastOffset.height + value.translation.height
+            )
+        }
+        .onEnded { _ in lastOffset = offset }
+)
+.simultaneousGesture(
+    MagnifyGesture()
+        .onChanged { value in scale = lastScale * value.magnification }
+        .onEnded { _ in lastScale = scale }
+)
+.simultaneousGesture(
+    RotateGesture()
+        .onChanged { value in angle = lastAngle + value.rotation }
+        .onEnded { _ in lastAngle = angle }
+)
+
+Button("リセット") {
+    withAnimation(.spring) {
+        offset = .zero; lastOffset = .zero
+        scale = 1.0; lastScale = 1.0
+        angle = .zero; lastAngle = .zero
+    }
+}
 ```
 
 **何をしているか：**

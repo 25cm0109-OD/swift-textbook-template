@@ -14,7 +14,7 @@
 （教員から配布された模範コードをここに貼り付ける）
 
 ```swift
-// ここに模範コード全体を貼る
+// 模範コード全体は、このファイル末尾の「完成したコード」に掲載しています。
 ```
 
 **このアプリは何をするものか：**
@@ -26,7 +26,28 @@
 ### データモデルの設計
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+@Model
+class PhotoRecord {
+    var title: String
+    var memo: String
+    var latitude: Double
+    var longitude: Double
+    var imageData: Data?
+    var createdAt: Date
+
+    init(title: String, memo: String = "", latitude: Double, longitude: Double, imageData: Data? = nil) {
+        self.title = title
+        self.memo = memo
+        self.latitude = latitude
+        self.longitude = longitude
+        self.imageData = imageData
+        self.createdAt = .now
+    }
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
 ```
 
 **何をしているか：**
@@ -43,7 +64,10 @@
 ### タブ構成の設計
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+TabView {
+    MapTab().tabItem { Label("マップ", systemImage: "map") }
+    ListTab().tabItem { Label("一覧", systemImage: "list.bullet") }
+}
 ```
 
 **何をしているか：**
@@ -57,7 +81,23 @@
 ### カメラと位置情報の連携
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+@Observable
+class LocationManager: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    var currentLocation: CLLocationCoordinate2D?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.requestWhenInUseAuthorization()
+        manager.startUpdatingLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        currentLocation = locations.last?.coordinate
+    }
+}
 ```
 
 **何をしているか：**
@@ -71,7 +111,19 @@
 ### SwiftDataでの画像保存
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+func saveRecord() {
+    guard let location = locationManager.currentLocation else { return }
+
+    let record = PhotoRecord(
+        title: title,
+        memo: memo,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        imageData: selectedImageData
+    )
+    modelContext.insert(record)
+    dismiss()
+}
 ```
 
 **何をしているか：**

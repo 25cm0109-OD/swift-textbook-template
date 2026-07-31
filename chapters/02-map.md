@@ -384,7 +384,6 @@ apple標準の3d風マップを表示
 ### マーカーの表示
 
 ```swift
-// 該当部分のコードを抜粋して貼る
 ForEach(filteredLandmarks) { landmark in
     Marker(
         landmark.name,
@@ -419,7 +418,6 @@ UIKitの(MKPointAnnotation)を生成
 ### フィルター機能
 
 ```swift
-// 該当部分のコードを抜粋して貼る
 @State private var selectedCategories: Set<Landmark.Category> = Set(Landmark.Category.allCases)
 
 var filteredLandmarks: [Landmark] {
